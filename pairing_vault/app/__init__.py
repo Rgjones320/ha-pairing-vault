@@ -1,1 +1,1 @@
-"""Pairing Vault: store Matter and Z-Wave setup codes inside Home Assistant."""
+"""Pairing Vault: Store Matter, Z-Wave, and Insteon setup codes inside Home Assistant."""
