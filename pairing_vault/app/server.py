@@ -12,10 +12,24 @@ from .payloads import PayloadError, decode
 
 STATIC_DIR = Path(__file__).parent / "static"
 
+# Everything the UI needs is served from this add-on; nothing loads from
+# elsewhere. blob: and data: cover photos being scanned and the camera preview.
+CSP = "; ".join((
+    "default-src 'self'",
+    "img-src 'self' blob: data:",
+    "media-src 'self' blob:",
+    "object-src 'none'",
+    "base-uri 'none'",
+    "form-action 'self'",
+    "frame-ancestors 'self'",
+))
+
 
 def create_app(data_dir: str | None = None) -> Flask:
     data_dir = data_dir or os.environ.get("DATA_DIR", "./data")
     app = Flask(__name__, static_folder=None)
+    # Device entries are a few KB at most.
+    app.config["MAX_CONTENT_LENGTH"] = 256 * 1024
     store = Store(Path(data_dir) / "pairing_vault.db")
     app.config["STORE"] = store
     # In the add-on only the Supervisor's Ingress proxy may talk to us.
@@ -25,6 +39,22 @@ def create_app(data_dir: str | None = None) -> Flask:
     def _only_ingress():
         if allowed and request.remote_addr not in allowed:
             abort(403)
+
+    @app.before_request
+    def _same_origin_writes():
+        # The API only takes JSON, which a cross-site form can't send, but a
+        # page on another site shouldn't be able to change data either way.
+        site = request.headers.get("Sec-Fetch-Site")
+        if request.method not in ("GET", "HEAD", "OPTIONS") and site not in (None, "same-origin", "none"):
+            abort(403)
+
+    @app.after_request
+    def _security_headers(resp):
+        resp.headers.setdefault("Content-Security-Policy", CSP)
+        resp.headers.setdefault("X-Content-Type-Options", "nosniff")
+        resp.headers.setdefault("X-Frame-Options", "SAMEORIGIN")
+        resp.headers.setdefault("Referrer-Policy", "no-referrer")
+        return resp
 
     @app.errorhandler(ValidationError)
     def _invalid(err: ValidationError):

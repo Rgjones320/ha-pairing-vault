@@ -76,9 +76,9 @@ def test_zwave_bad_checksum():
         decode(bad)
 
 
-@pytest.mark.parametrize("text", ["3FD2BE", "3f.d2.be", " 3F D2 BE "])
+@pytest.mark.parametrize("text", ["1A2B3C", "1a.2b.3c", " 1A 2B 3C "])
 def test_insteon(text):
-    assert decode(text) == {"protocol": "insteon", "fields": {"insteon_id": "3F.D2.BE"}, "details": []}
+    assert decode(text) == {"protocol": "insteon", "fields": {"insteon_id": "1A.2B.3C"}, "details": []}
 
 
 def test_other_text():

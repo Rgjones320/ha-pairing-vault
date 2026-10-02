@@ -82,9 +82,9 @@ def test_ui_served(client):
 
 
 def test_insteon_id_normalised(client):
-    dev = client.post("/api/devices", json={"name": "Modem", "protocol": "insteon", "insteon_id": "3fd2be"}).get_json()
-    assert dev["protocol"] == "insteon" and dev["insteon_id"] == "3F.D2.BE"
-    assert [d["name"] for d in client.get("/api/devices?q=d2.be").get_json()] == ["Modem"]
+    dev = client.post("/api/devices", json={"name": "Modem", "protocol": "insteon", "insteon_id": "1a2b3c"}).get_json()
+    assert dev["protocol"] == "insteon" and dev["insteon_id"] == "1A.2B.3C"
+    assert [d["name"] for d in client.get("/api/devices?q=2b.3c").get_json()] == ["Modem"]
 
 
 def test_migrates_v1_database(tmp_path):
@@ -117,3 +117,29 @@ def test_schema_version_and_persistence(tmp_path):
     assert len(client.get("/api/devices").get_json()) == 1
     version = sqlite3.connect(tmp_path / "pairing_vault.db").execute("PRAGMA user_version").fetchone()[0]
     assert version == len(MIGRATIONS)
+
+
+def test_security_headers(client):
+    res = client.get("/")
+    assert "frame-ancestors 'self'" in res.headers["Content-Security-Policy"]
+    assert res.headers["X-Content-Type-Options"] == "nosniff"
+    assert client.get("/api/devices").headers["Referrer-Policy"] == "no-referrer"
+
+
+def test_cross_site_writes_rejected(client):
+    cross = {"Sec-Fetch-Site": "cross-site"}
+    assert client.post("/api/devices", json=MATTER, headers=cross).status_code == 403
+    assert client.get("/api/devices", headers=cross).status_code == 200
+    same = {"Sec-Fetch-Site": "same-origin"}
+    assert client.post("/api/devices", json=MATTER, headers=same).status_code == 201
+
+
+def test_form_posts_rejected(client):
+    # Cross-site HTML forms can't send JSON, so they get a validation error.
+    res = client.post("/api/devices", data={"name": "x", "protocol": "other"})
+    assert res.status_code == 400
+
+
+def test_large_body_rejected(client):
+    res = client.post("/api/devices", json={**MATTER, "notes": "x" * 300_000})
+    assert res.status_code == 413

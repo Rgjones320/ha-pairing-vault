@@ -8,7 +8,7 @@ For each device:
 
 - **Name** and **type** (Matter, Z-Wave, Insteon, or other)
 - **QR code payload**: the text inside the QR code (Matter codes start with `MT:`, Z-Wave SmartStart codes start with `90`, Insteon codes are the six-character device ID)
-- **Matter pairing code** (11 or 21 digits), **Z-Wave device specific key (DSK)** (eight groups of five digits), or **Insteon ID** (six characters such as `3F.D2.BE`)
+- **Matter pairing code** (11 or 21 digits), **Z-Wave device specific key (DSK)** (eight groups of five digits), or **Insteon ID** (six characters such as `1A.2B.3C`)
 - **Serial number**, **manufacturer**, **model**
 - **Location** and **notes**
 
