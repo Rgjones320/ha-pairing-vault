@@ -8,6 +8,7 @@ from pathlib import Path
 from flask import Flask, abort, jsonify, request, send_from_directory
 
 from .db import Store, ValidationError
+from .payloads import PayloadError, decode
 
 STATIC_DIR = Path(__file__).parent / "static"
 
@@ -64,6 +65,16 @@ def create_app(data_dir: str | None = None) -> Flask:
         if not store.delete(device_id):
             abort(404)
         return "", 204
+
+    @app.post("/api/decode")
+    def decode_payload():
+        payload = _json_body().get("payload")
+        if not isinstance(payload, str) or not payload.strip():
+            raise ValidationError({"payload": "is required"})
+        try:
+            return jsonify(decode(payload))
+        except PayloadError as err:
+            return jsonify(error=str(err)), 400
 
     return app
 

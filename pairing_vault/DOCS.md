@@ -16,6 +16,20 @@ For each device:
 
 Open **Pairing Vault** from the sidebar. Use **Add device** to store a new entry, click an entry to edit it, and use the search box to filter by name, location, serial number or code.
 
+## Reading a QR code
+
+In the device form, **Scan a photo** reads the QR code from a picture. On a phone it offers to take a photo with the camera or pick one from your library; on a computer it opens a file picker. This works whether you reach Home Assistant over `http` or `https`. The photo is decoded in your browser and is not uploaded or stored.
+
+**Use camera** scans live from the camera preview. Browsers only allow live camera access on secure pages, so this button appears only when Home Assistant is opened over `https` (for example through Nabu Casa or your own certificate). Over plain `http` on your network, use **Scan a photo** instead.
+
+When the code is a Matter (`MT:`) or Z-Wave SmartStart (`90…`) code, Pairing Vault fills in the type and the manual pairing code or DSK, and shows what else the code contains, such as the vendor and product IDs. You can also paste or type the code's text into the **QR code payload** box and the same happens when you leave the box.
+
+On an iPhone, photos picked with **Scan a photo** are handed over as JPEG automatically. A HEIC file copied to a computer may not open in Chrome or Firefox; export it as JPEG first.
+
+## Showing a code for re-setup
+
+**Show QR** on a device in the list (or **Show** next to the payload in the form) displays its QR code full screen, black on white, with the manual pairing code or DSK underneath. Point the Home Assistant app, or your Matter or Z-Wave controller app, at the screen to set the device up again. For Z-Wave the first five digits of the DSK, which controllers ask for as the PIN, are in bold. Tap anywhere to close it.
+
 ## Backups
 
 Everything is stored in a single SQLite database in the add-on's `/data` folder, which Home Assistant includes in its backups automatically.

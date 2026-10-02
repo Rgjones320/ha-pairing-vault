@@ -102,3 +102,40 @@ form small { color: var(--muted); font-weight: 400; font-size: 12px; }
 .actions { display: flex; gap: 8px; align-items: center; margin-top: 8px; }
 .spacer { flex: 1; }
 [hidden] { display: none !important; }
+
+/* QR capture and display */
+.field { display: grid; gap: 4px; margin-bottom: 12px; }
+.field > label { margin: 0; }
+.field small { color: var(--muted); font-size: 12px; }
+.qr-row { display: flex; gap: 8px; }
+.qr-row input { flex: 1; min-width: 0; }
+.qr-tools { display: flex; gap: 8px; flex-wrap: wrap; }
+.qr-tools button { padding: 6px 12px; font-size: 14px; }
+.qr-status { margin: 2px 0 0; font-size: 13px; }
+.qr-details {
+  display: grid; grid-template-columns: auto 1fr; gap: 2px 12px; margin: 2px 0 0;
+  padding: 8px 10px; border: 1px solid var(--line); border-radius: 8px; font-size: 13px;
+}
+.qr-details dt { color: var(--muted); }
+.qr-details dd { margin: 0; overflow-wrap: anywhere; }
+.item .show-qr { margin-left: auto; padding: 3px 10px; font-size: 13px; }
+
+dialog.camera { padding: 12px; }
+.camera video { display: block; width: 100%; max-height: 65vh; border-radius: 8px; background: #000; object-fit: contain; }
+.camera p { margin: 8px 0 0; color: var(--muted); font-size: 14px; }
+
+/* Always black on white, whatever the theme, so phones can scan it. */
+dialog.viewer {
+  width: 100vw; height: 100vh; max-width: none; max-height: none; margin: 0;
+  border: 0; border-radius: 0; padding: 16px; background: #fff; color: #000;
+  display: none; cursor: pointer;
+}
+dialog.viewer[open] {
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px;
+}
+dialog.viewer::backdrop { background: #fff; }
+.viewer-qr { width: min(88vw, 62vh); }
+.viewer-qr svg { display: block; width: 100%; height: auto; shape-rendering: crispEdges; }
+.viewer-name { margin: 0; font-size: 20px; font-weight: 600; text-align: center; }
+.viewer-code { margin: 0; font-size: clamp(18px, 5vw, 28px); letter-spacing: .04em; text-align: center; overflow-wrap: anywhere; }
+.viewer button { background: #fff; color: #000; border-color: #bbb; }

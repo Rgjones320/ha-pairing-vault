@@ -77,6 +77,8 @@ def test_ui_served(client):
     res = client.get("/")
     assert res.status_code == 200 and b"Pairing Vault" in res.data
     assert client.get("/static/app.js").status_code == 200
+    for lib in ("jsQR.min.js", "qrcode.min.js"):
+        assert client.get(f"/static/vendor/{lib}").status_code == 200
 
 
 def test_ingress_only(tmp_path, monkeypatch):

@@ -42,10 +42,22 @@
         <label><input type="radio" name="protocol" value="other"> Other</label>
       </fieldset>
 
-      <label>QR code payload
-        <input name="qr_payload" class="mono" autocomplete="off" spellcheck="false">
+      <div class="field">
+        <label for="qr_payload">QR code payload</label>
+        <div class="qr-row">
+          <input id="qr_payload" name="qr_payload" class="mono" autocomplete="off" spellcheck="false">
+          <button type="button" id="show-qr" title="Show this QR code full screen" hidden>Show</button>
+        </div>
+        <div class="qr-tools">
+          <button type="button" id="qr-photo">Scan a photo</button>
+          <button type="button" id="qr-camera" hidden>Use camera</button>
+          <input type="file" id="qr-file" accept="image/*" hidden>
+        </div>
         <small data-hint="qr"></small>
-      </label>
+        <small id="camera-note" hidden>Live camera scanning needs HTTPS. On a phone, Scan a photo can open the camera instead.</small>
+        <p id="qr-status" class="qr-status" role="status" hidden></p>
+        <dl id="qr-details" class="qr-details" hidden></dl>
+      </div>
 
       <label data-for="matter other">Manual pairing code
         <input name="manual_code" class="mono" inputmode="numeric" autocomplete="off" placeholder="1234-567-8901">
@@ -78,6 +90,21 @@
     </form>
   </dialog>
 
+  <dialog id="camera" class="camera">
+    <video id="camera-video" playsinline muted></video>
+    <p id="camera-status">Point the camera at the QR code.</p>
+    <div class="actions"><span class="spacer"></span><button type="button" id="camera-cancel">Cancel</button></div>
+  </dialog>
+
+  <dialog id="viewer" class="viewer">
+    <div id="viewer-qr" class="viewer-qr"></div>
+    <p id="viewer-name" class="viewer-name"></p>
+    <p id="viewer-code" class="viewer-code mono"></p>
+    <button type="button" id="viewer-close">Close</button>
+  </dialog>
+
+  <script src="static/vendor/jsQR.min.js"></script>
+  <script src="static/vendor/qrcode.min.js"></script>
   <script src="static/app.js"></script>
 </body>
 </html>

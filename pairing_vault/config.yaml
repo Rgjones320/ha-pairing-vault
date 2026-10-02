@@ -1,5 +1,5 @@
 name: Pairing Vault
-version: "0.1.0"
+version: "0.2.0"
 slug: pairing_vault
 description: Keep Matter and Z-Wave setup QR codes and serial numbers for re-setup later.
 url: https://github.com/Rgjones320/ha-pairing-vault
