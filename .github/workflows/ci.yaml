@@ -1,0 +1,32 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -r pairing_vault/requirements.txt pytest
+      - run: python -m pytest -q
+
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build add-on image (amd64)
+        run: |
+          base=$(grep '^  amd64:' pairing_vault/build.yaml | awk '{print $2}')
+          docker build --build-arg BUILD_FROM="$base" -t pairing-vault:ci pairing_vault
+      - name: Start container and check the UI responds
+        run: |
+          docker run -d --name pv -p 8099:8099 --entrypoint python3 -w /opt/pairing_vault \
+            -e DATA_DIR=/data pairing-vault:ci -m app
+          for i in $(seq 1 20); do curl -fs localhost:8099/api/devices && exit 0; sleep 1; done
+          docker logs pv; exit 1

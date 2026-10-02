@@ -1,0 +1,104 @@
+:root {
+  --bg: #f4f5f7;
+  --card: #ffffff;
+  --text: #1c1f24;
+  --muted: #5f6672;
+  --line: #dde1e7;
+  --accent: #03a9f4;
+  --accent-text: #ffffff;
+  --danger: #d93025;
+  --matter: #4a5bd4;
+  --zwave: #1f8a5b;
+  --other: #7a7f88;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #111317;
+    --card: #1c1f25;
+    --text: #e6e8eb;
+    --muted: #9aa1ac;
+    --line: #2e333b;
+    --accent: #29b6f6;
+    --accent-text: #0b1014;
+    --danger: #f07167;
+    --matter: #8c99f2;
+    --zwave: #4fc38d;
+    --other: #9aa1ac;
+    color-scheme: dark;
+  }
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font: 15px/1.45 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+}
+.bar {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  padding: 12px 16px; background: var(--card); border-bottom: 1px solid var(--line);
+  position: sticky; top: 0; z-index: 1;
+}
+h1 { font-size: 20px; margin: 0; font-weight: 600; }
+h2 { font-size: 18px; margin: 0 0 12px; }
+main { max-width: 900px; margin: 0 auto; padding: 16px; }
+.tools { display: flex; gap: 8px; margin-bottom: 12px; }
+.tools input { flex: 1; min-width: 0; }
+input, select, textarea, button {
+  font: inherit; color: inherit;
+}
+input, select, textarea {
+  width: 100%; padding: 8px 10px; border: 1px solid var(--line); border-radius: 8px;
+  background: var(--card);
+}
+.tools select { width: auto; }
+textarea { resize: vertical; }
+.mono { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+button {
+  padding: 8px 14px; border-radius: 8px; border: 1px solid var(--line);
+  background: var(--card); cursor: pointer;
+}
+button.primary { background: var(--accent); color: var(--accent-text); border-color: transparent; font-weight: 600; }
+button.danger { color: var(--danger); border-color: var(--danger); background: transparent; }
+.list { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.item {
+  background: var(--card); border: 1px solid var(--line); border-radius: 10px;
+  padding: 12px 14px; cursor: pointer; display: grid; gap: 4px;
+}
+.item:hover, .item:focus-visible { border-color: var(--accent); outline: none; }
+.item .top { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.item .name { font-weight: 600; }
+.item .meta { color: var(--muted); font-size: 13px; display: flex; gap: 12px; flex-wrap: wrap; }
+.item .meta .mono { overflow-wrap: anywhere; }
+.badge {
+  font-size: 11px; font-weight: 700; letter-spacing: .03em; text-transform: uppercase;
+  padding: 2px 7px; border-radius: 999px; border: 1px solid currentColor;
+}
+.badge.matter { color: var(--matter); }
+.badge.zwave { color: var(--zwave); }
+.badge.other { color: var(--other); }
+.empty { color: var(--muted); text-align: center; padding: 32px 0; }
+.error { color: var(--danger); }
+dialog {
+  width: min(560px, calc(100vw - 24px)); max-height: calc(100vh - 24px);
+  border: 1px solid var(--line); border-radius: 12px; padding: 20px;
+  background: var(--card); color: var(--text);
+}
+dialog::backdrop { background: rgb(0 0 0 / .45); }
+form label { display: grid; gap: 4px; margin-bottom: 12px; font-size: 14px; font-weight: 500; }
+form small { color: var(--muted); font-weight: 400; font-size: 12px; }
+.req { color: var(--danger); }
+.grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0 12px; }
+@media (max-width: 480px) { .grid { grid-template-columns: 1fr; } }
+.seg { border: 0; padding: 0; margin: 0 0 12px; display: flex; gap: 6px; flex-wrap: wrap; }
+.seg legend { font-size: 14px; font-weight: 500; margin-bottom: 4px; padding: 0; }
+.seg label {
+  display: flex; align-items: center; gap: 6px; margin: 0; padding: 6px 12px;
+  border: 1px solid var(--line); border-radius: 999px; cursor: pointer;
+}
+.seg label:has(input:checked) { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 14%, transparent); }
+.seg input { width: auto; margin: 0; }
+.actions { display: flex; gap: 8px; align-items: center; margin-top: 8px; }
+.spacer { flex: 1; }
+[hidden] { display: none !important; }
