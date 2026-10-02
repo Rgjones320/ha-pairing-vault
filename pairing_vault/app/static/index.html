@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Pairing Vault</title>
+  <link rel="stylesheet" href="static/style.css">
+</head>
+<body>
+  <header class="bar">
+    <h1>Pairing Vault</h1>
+    <button id="add" class="primary">Add device</button>
+  </header>
+
+  <main>
+    <div class="tools">
+      <input id="search" type="search" placeholder="Search name, location, serial, code…" autocomplete="off">
+      <select id="filter" aria-label="Type">
+        <option value="">All types</option>
+        <option value="matter">Matter</option>
+        <option value="zwave">Z-Wave</option>
+        <option value="other">Other</option>
+      </select>
+    </div>
+    <p id="error" class="error" hidden></p>
+    <ul id="list" class="list"></ul>
+    <p id="empty" class="empty" hidden>No devices yet. Use <strong>Add device</strong> to store your first setup code.</p>
+  </main>
+
+  <dialog id="dialog">
+    <form id="form" method="dialog" novalidate>
+      <h2 id="form-title">Add device</h2>
+
+      <label><span>Name <span class="req">*</span></span>
+        <input name="name" required maxlength="200" placeholder="Kitchen ceiling light">
+      </label>
+
+      <fieldset class="seg">
+        <legend>Type</legend>
+        <label><input type="radio" name="protocol" value="matter" checked> Matter</label>
+        <label><input type="radio" name="protocol" value="zwave"> Z-Wave</label>
+        <label><input type="radio" name="protocol" value="other"> Other</label>
+      </fieldset>
+
+      <label>QR code payload
+        <input name="qr_payload" class="mono" autocomplete="off" spellcheck="false">
+        <small data-hint="qr"></small>
+      </label>
+
+      <label data-for="matter other">Manual pairing code
+        <input name="manual_code" class="mono" inputmode="numeric" autocomplete="off" placeholder="1234-567-8901">
+        <small>11 or 21 digits, printed under the QR code.</small>
+      </label>
+
+      <label data-for="zwave other">DSK
+        <input name="dsk" class="mono" autocomplete="off" placeholder="12345-12345-12345-…">
+        <small>Eight groups of five digits. The first group is the PIN you may be asked for.</small>
+      </label>
+
+      <div class="grid">
+        <label>Serial number <input name="serial_number" class="mono" autocomplete="off"></label>
+        <label>Location <input name="location" placeholder="Kitchen" list="locations"></label>
+        <label>Manufacturer <input name="manufacturer"></label>
+        <label>Model <input name="model"></label>
+      </div>
+      <datalist id="locations"></datalist>
+
+      <label>Notes <textarea name="notes" rows="3"></textarea></label>
+
+      <p id="form-error" class="error" hidden></p>
+
+      <div class="actions">
+        <button type="button" id="delete" class="danger" hidden>Delete</button>
+        <span class="spacer"></span>
+        <button type="button" id="cancel">Cancel</button>
+        <button type="submit" class="primary">Save</button>
+      </div>
+    </form>
+  </dialog>
+
+  <script src="static/app.js"></script>
+</body>
+</html>

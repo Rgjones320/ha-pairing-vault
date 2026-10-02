@@ -1,2 +1,21 @@
-# ha-pairing-vault
-A place to store your device pairing codes
+# Pairing Vault add-on repository
+
+A Home Assistant add-on that stores Matter and Z-Wave setup QR codes, pairing codes and serial numbers, so you can re-setup a device after its label is out of reach.
+
+## Install
+
+1. In Home Assistant, go to **Settings → Add-ons → Add-on Store**, open the ⋮ menu and choose **Repositories**.
+2. Add `https://github.com/Rgjones320/ha-pairing-vault`.
+3. Install **Pairing Vault**, start it, and enable **Show in sidebar**.
+
+## Development
+
+The add-on lives in `pairing_vault/`. It is a small Flask app served by waitress, storing data in SQLite at `/data/pairing_vault.db`.
+
+```sh
+pip install -r pairing_vault/requirements.txt pytest
+python -m pytest                       # API and storage tests
+cd pairing_vault && DATA_DIR=./data python -m app   # http://localhost:8099
+```
+
+Schema changes go in `MIGRATIONS` in `pairing_vault/app/db.py` as a new entry; the database's `PRAGMA user_version` tracks which have run.
