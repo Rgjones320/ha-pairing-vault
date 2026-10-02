@@ -112,7 +112,7 @@ def clean(data: dict, *, partial: bool = False) -> dict:
         # Notes keep their line breaks; everything else is a single trimmed line.
         out[field] = value.strip() if field == "notes" else " ".join(value.split())
 
-    # Insteon IDs are six hex digits, printed as 3F.D2.BE.
+    # Insteon IDs are six hex digits, printed as 1A.2B.3C.
     insteon = re.fullmatch(r"([0-9a-f]{2})[.:\s-]?([0-9a-f]{2})[.:\s-]?([0-9a-f]{2})",
                            out.get("insteon_id", ""), re.I)
     if insteon:

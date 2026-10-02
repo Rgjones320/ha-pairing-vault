@@ -1,6 +1,6 @@
 """Decode Matter, Z-Wave SmartStart and Insteon QR code payloads.
 
-Insteon labels carry just the six-hex-digit device ID (3FD2BE for 3F.D2.BE).
+Insteon labels carry just the six-hex-digit device ID (1A2B3C for 1A.2B.3C).
 Matter: Matter Core Specification, section 5.1.3 (QR code) and 5.1.4
 (manual pairing code). Z-Wave: "Node Provisioning QR Code Format"
 (Z-Wave Alliance SDS13937).

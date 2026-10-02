@@ -1,5 +1,13 @@
 Third-party libraries bundled with Pairing Vault so it works without internet access.
 
+Both files are the npm release minified with terser 5 (`terser <file> -c -m`),
+with a one-line banner added. To check them, minify the npm file the same way
+and compare everything after the first line:
+  jsQR.min.js    <- jsqr@1.4.0 dist/jsQR.js
+                    (npm sha512-dxLob7q65Xg2DvstYkRpkYtmKm2sPJ9oFhrhmudT1dZvNFFTlroai3AWSpLey/w5vMcLBXRgOJsbXpdN9HzU/A==)
+  qrcode.min.js  <- qrcode-generator@1.4.4 qrcode.js
+                    (npm sha512-HM7yY8O2ilqhmULxGMpcHSF1EhJJ9yBj8gvDEuZ6M+KGJ0YY2hKpnXvRD+hZPLrDVck3ExIGhmPtSdcjC+guuw==)
+
 jsQR.min.js: jsQR 1.4.0, https://github.com/cozmo/jsQR
 Licensed under the Apache License 2.0 (full text below). Minified, otherwise unmodified.
 

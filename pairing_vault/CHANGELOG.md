@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.3.1
+
+- Security hardening: a Content-Security-Policy and other browser security headers, writes from other sites are refused, request bodies are capped at 256 KB, and only Home Assistant's Ingress proxy may connect even if the add-on's start script doesn't say so.
+
 ## 0.3.0
 
 - Insteon is a device type, with an Insteon ID field. Scanning an Insteon label's QR code fills it in.
