@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.3.0
+
+- Insteon is a device type, with an Insteon ID field. Scanning an Insteon label's QR code fills it in.
+- Clearer labels: "Matter pairing code" and "Z-Wave device specific key (DSK)".
+- The add-on has a QR code icon in the add-on store, matching the sidebar.
+
 ## 0.2.0
 
 - Read a QR code from a photo (works over plain http) or, on https, live from the camera.

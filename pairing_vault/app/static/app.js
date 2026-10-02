@@ -1,9 +1,13 @@
 // All URLs are relative so the page works under Home Assistant's Ingress path.
 const API = "api/devices";
-const TYPE_LABEL = { matter: "Matter", zwave: "Z-Wave", other: "Other" };
+const TYPE_LABEL = { matter: "Matter", zwave: "Z-Wave", insteon: "Insteon", other: "Other" };
+// The code shown in the list and under a full-screen QR code, per type.
+const CODE_FIELD = { matter: "manual_code", zwave: "dsk", insteon: "insteon_id", other: "manual_code" };
+const CODE_NAME = { manual_code: "Matter pairing code", dsk: "DSK", insteon_id: "Insteon ID" };
 const QR_HINT = {
   matter: "The text inside the QR code. Matter codes start with MT:",
   zwave: "The text inside the QR code. Z-Wave SmartStart codes start with 90 and are all digits.",
+  insteon: "The text inside the QR code. On Insteon labels it is the device ID without the dots.",
   other: "The text inside the QR code, if there is one.",
 };
 
@@ -53,7 +57,7 @@ function render() {
     if (type && d.protocol !== type) return false;
     if (!q) return true;
     return [d.name, d.location, d.serial_number, d.manufacturer, d.model,
-            d.qr_payload, d.manual_code, d.dsk, d.notes]
+            d.qr_payload, d.manual_code, d.dsk, d.insteon_id, d.notes]
       .some((v) => v && v.toLowerCase().includes(q));
   });
 
@@ -72,7 +76,7 @@ function el(tag, attrs = {}, ...children) {
 }
 
 function renderItem(d) {
-  const code = d.protocol === "zwave" ? d.dsk : d.manual_code;
+  const code = d[CODE_FIELD[d.protocol]] || (d.protocol === "other" ? d.dsk : "");
   const meta = [
     d.location && el("span", {}, d.location),
     [d.manufacturer, d.model].filter(Boolean).join(" ") && el("span", {}, [d.manufacturer, d.model].filter(Boolean).join(" ")),
@@ -146,9 +150,10 @@ form.addEventListener("change", (e) => {
 form.addEventListener("submit", async (e) => {
   e.preventDefault();
   const data = Object.fromEntries(new FormData(form));
-  // Clear the code field that doesn't apply so stale values aren't kept.
-  if (data.protocol === "matter") data.dsk = "";
-  if (data.protocol === "zwave") data.manual_code = "";
+  // Clear code fields that don't apply to this type so stale values aren't kept.
+  form.querySelectorAll("[data-for]").forEach((node) => {
+    if (node.hidden) node.querySelectorAll("input").forEach((input) => { data[input.name] = ""; });
+  });
   try {
     await request(editingId ? `${API}/${editingId}` : API, {
       method: editingId ? "PUT" : "POST",
@@ -225,15 +230,16 @@ async function interpret(payload, { fill, scanned = false } = {}) {
   if (seq !== interpretSeq) return;
   const label = TYPE_LABEL[result.protocol];
   if (result.protocol === "other") {
-    if (scanned) setQrStatus("QR code read. It isn't a Matter or Z-Wave setup code, so it's kept as text.");
+    if (scanned) setQrStatus("QR code read. It isn't a Matter, Z-Wave or Insteon code, so it's kept as text.");
     return;
   }
   if (fill) {
     form.elements.protocol.value = result.protocol;
     applyProtocol();
     for (const [key, value] of Object.entries(result.fields)) form.elements[key].value = value;
-    const filled = result.protocol === "matter" ? "manual pairing code" : "DSK";
-    setQrStatus(`${scanned ? "Read a" : "Recognised a"} ${label} code and filled in the ${filled}.`);
+    const filled = CODE_NAME[CODE_FIELD[result.protocol]];
+    const article = /^[AEIOU]/.test(label) ? "an" : "a";
+    setQrStatus(`${scanned ? "Read" : "Recognised"} ${article} ${label} code and filled in the ${filled}.`);
   }
   qrDetails.replaceChildren(...result.details.flatMap(([k, v]) => [el("dt", {}, k), el("dd", {}, v)]));
   qrDetails.hidden = !result.details.length;
@@ -412,6 +418,8 @@ async function showQr(device) {
     // The first five digits are the PIN Z-Wave controllers ask for.
     const [pin, ...rest] = device.dsk.split("-");
     viewerCode.append("DSK ", el("strong", {}, pin), rest.length ? "-" + rest.join("-") : "");
+  } else if (device.protocol === "insteon" && device.insteon_id) {
+    viewerCode.append(`ID ${device.insteon_id}`);
   } else if (device.manual_code) {
     viewerCode.append(device.manual_code);
   }

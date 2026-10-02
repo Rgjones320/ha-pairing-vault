@@ -2,12 +2,13 @@
 
 from __future__ import annotations
 
+import re
 import sqlite3
 import uuid
 from datetime import datetime, timezone
 from pathlib import Path
 
-PROTOCOLS = ("matter", "zwave", "other")
+PROTOCOLS = ("matter", "zwave", "insteon", "other")
 
 # Fields a client may set. id, uuid and timestamps are managed here.
 EDITABLE_FIELDS = (
@@ -16,6 +17,7 @@ EDITABLE_FIELDS = (
     "qr_payload",
     "manual_code",
     "dsk",
+    "insteon_id",
     "serial_number",
     "manufacturer",
     "model",
@@ -47,6 +49,40 @@ MIGRATIONS: list[list[str]] = [
         """,
         "CREATE INDEX devices_name ON devices (name COLLATE NOCASE)",
     ],
+    # Add Insteon. SQLite can't change a CHECK constraint in place, so the
+    # table is rebuilt without it; clean() validates protocol instead.
+    [
+        """
+        CREATE TABLE devices_new (
+            id            INTEGER PRIMARY KEY AUTOINCREMENT,
+            uuid          TEXT NOT NULL UNIQUE,
+            name          TEXT NOT NULL,
+            protocol      TEXT NOT NULL,
+            qr_payload    TEXT NOT NULL DEFAULT '',
+            manual_code   TEXT NOT NULL DEFAULT '',
+            dsk           TEXT NOT NULL DEFAULT '',
+            insteon_id    TEXT NOT NULL DEFAULT '',
+            serial_number TEXT NOT NULL DEFAULT '',
+            manufacturer  TEXT NOT NULL DEFAULT '',
+            model         TEXT NOT NULL DEFAULT '',
+            location      TEXT NOT NULL DEFAULT '',
+            notes         TEXT NOT NULL DEFAULT '',
+            created_at    TEXT NOT NULL,
+            updated_at    TEXT NOT NULL
+        )
+        """,
+        """
+        INSERT INTO devices_new (id, uuid, name, protocol, qr_payload, manual_code, dsk,
+                                 serial_number, manufacturer, model, location, notes,
+                                 created_at, updated_at)
+        SELECT id, uuid, name, protocol, qr_payload, manual_code, dsk,
+               serial_number, manufacturer, model, location, notes, created_at, updated_at
+        FROM devices
+        """,
+        "DROP TABLE devices",
+        "ALTER TABLE devices_new RENAME TO devices",
+        "CREATE INDEX devices_name ON devices (name COLLATE NOCASE)",
+    ],
 ]
 
 
@@ -75,6 +111,12 @@ def clean(data: dict, *, partial: bool = False) -> dict:
             continue
         # Notes keep their line breaks; everything else is a single trimmed line.
         out[field] = value.strip() if field == "notes" else " ".join(value.split())
+
+    # Insteon IDs are six hex digits, printed as 3F.D2.BE.
+    insteon = re.fullmatch(r"([0-9a-f]{2})[.:\s-]?([0-9a-f]{2})[.:\s-]?([0-9a-f]{2})",
+                           out.get("insteon_id", ""), re.I)
+    if insteon:
+        out["insteon_id"] = ".".join(insteon.groups()).upper()
 
     if not partial or "name" in out:
         if not out.get("name"):
@@ -105,6 +147,8 @@ class Store:
         Path(self.path).parent.mkdir(parents=True, exist_ok=True)
         with self._connect() as conn:
             version = conn.execute("PRAGMA user_version").fetchone()[0]
+            # One transaction, so a failed migration leaves nothing half done.
+            conn.execute("BEGIN")
             for target, statements in enumerate(MIGRATIONS[version:], start=version + 1):
                 for sql in statements:
                     conn.execute(sql)
@@ -116,7 +160,7 @@ class Store:
         if query:
             like = f"%{query}%"
             cols = ("name", "location", "serial_number", "manufacturer", "model",
-                    "qr_payload", "manual_code", "dsk", "notes")
+                    "qr_payload", "manual_code", "dsk", "insteon_id", "notes")
             sql += " WHERE " + " OR ".join(f"{c} LIKE ?" for c in cols)
             params = [like] * len(cols)
         sql += " ORDER BY name COLLATE NOCASE, id"

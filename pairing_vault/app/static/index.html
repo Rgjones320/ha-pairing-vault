@@ -19,6 +19,7 @@
         <option value="">All types</option>
         <option value="matter">Matter</option>
         <option value="zwave">Z-Wave</option>
+        <option value="insteon">Insteon</option>
         <option value="other">Other</option>
       </select>
     </div>
@@ -39,6 +40,7 @@
         <legend>Type</legend>
         <label><input type="radio" name="protocol" value="matter" checked> Matter</label>
         <label><input type="radio" name="protocol" value="zwave"> Z-Wave</label>
+        <label><input type="radio" name="protocol" value="insteon"> Insteon</label>
         <label><input type="radio" name="protocol" value="other"> Other</label>
       </fieldset>
 
@@ -59,14 +61,19 @@
         <dl id="qr-details" class="qr-details" hidden></dl>
       </div>
 
-      <label data-for="matter other">Manual pairing code
+      <label data-for="matter other">Matter pairing code
         <input name="manual_code" class="mono" inputmode="numeric" autocomplete="off" placeholder="1234-567-8901">
         <small>11 or 21 digits, printed under the QR code.</small>
       </label>
 
-      <label data-for="zwave other">DSK
+      <label data-for="zwave other">Z-Wave device specific key (DSK)
         <input name="dsk" class="mono" autocomplete="off" placeholder="12345-12345-12345-…">
         <small>Eight groups of five digits. The first group is the PIN you may be asked for.</small>
+      </label>
+
+      <label data-for="insteon">Insteon ID
+        <input name="insteon_id" class="mono" autocomplete="off" spellcheck="false" placeholder="1A.2B.3C">
+        <small>Six characters printed on the label, also called the device address.</small>
       </label>
 
       <div class="grid">

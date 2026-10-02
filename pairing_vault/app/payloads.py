@@ -1,5 +1,6 @@
-"""Decode Matter and Z-Wave SmartStart QR code payloads.
+"""Decode Matter, Z-Wave SmartStart and Insteon QR code payloads.
 
+Insteon labels carry just the six-hex-digit device ID (3FD2BE for 3F.D2.BE).
 Matter: Matter Core Specification, section 5.1.3 (QR code) and 5.1.4
 (manual pairing code). Z-Wave: "Node Provisioning QR Code Format"
 (Z-Wave Alliance SDS13937).
@@ -18,7 +19,7 @@ class PayloadError(ValueError):
 
 
 def decode(payload: str) -> dict:
-    """Return {"protocol", "fields", "details"} for a Matter or Z-Wave payload.
+    """Return {"protocol", "fields", "details"} for a recognised payload.
 
     ``fields`` holds values for device entry fields, including the payload
     itself tidied up (case, stray spaces); ``details`` is a list of
@@ -32,6 +33,11 @@ def decode(payload: str) -> dict:
     digits = re.sub(r"\s", "", text)
     if digits.startswith("90") and digits.isdigit() and len(digits) >= 52:
         return decode_zwave(digits)
+    insteon = re.fullmatch(r"([0-9a-f]{2})[.:\s-]?([0-9a-f]{2})[.:\s-]?([0-9a-f]{2})", text, re.I)
+    if insteon:
+        return {"protocol": "insteon",
+                "fields": {"insteon_id": ".".join(insteon.groups()).upper()},
+                "details": []}
     return {"protocol": "other", "fields": {}, "details": []}
 
 

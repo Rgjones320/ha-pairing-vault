@@ -1,14 +1,14 @@
 # Pairing Vault
 
-Matter and Z-Wave devices come with a setup QR code printed on the device and on the box or manual. Once a device is installed the label is usually hard to reach, and slips of paper get lost. Pairing Vault stores those codes in Home Assistant so they are there when you need to set a device up again.
+Matter, Z-Wave and Insteon devices come with a setup QR code or ID printed on the device and on the box or manual. Once a device is installed the label is usually hard to reach, and slips of paper get lost. Pairing Vault stores those codes in Home Assistant so they are there when you need to set a device up again.
 
 ## What it stores
 
 For each device:
 
-- **Name** and **type** (Matter, Z-Wave, or other)
-- **QR code payload**: the text inside the QR code (Matter codes start with `MT:`, Z-Wave SmartStart codes start with `90`)
-- **Manual pairing code** (Matter, 11 or 21 digits) or **DSK** (Z-Wave, eight groups of five digits)
+- **Name** and **type** (Matter, Z-Wave, Insteon, or other)
+- **QR code payload**: the text inside the QR code (Matter codes start with `MT:`, Z-Wave SmartStart codes start with `90`, Insteon codes are the six-character device ID)
+- **Matter pairing code** (11 or 21 digits), **Z-Wave device specific key (DSK)** (eight groups of five digits), or **Insteon ID** (six characters such as `3F.D2.BE`)
 - **Serial number**, **manufacturer**, **model**
 - **Location** and **notes**
 
@@ -22,13 +22,13 @@ In the device form, **Scan a photo** reads the QR code from a picture. On a phon
 
 **Use camera** scans live from the camera preview. Browsers only allow live camera access on secure pages, so this button appears only when Home Assistant is opened over `https` (for example through Nabu Casa or your own certificate). Over plain `http` on your network, use **Scan a photo** instead.
 
-When the code is a Matter (`MT:`) or Z-Wave SmartStart (`90…`) code, Pairing Vault fills in the type and the manual pairing code or DSK, and shows what else the code contains, such as the vendor and product IDs. You can also paste or type the code's text into the **QR code payload** box and the same happens when you leave the box.
+When the code is a Matter (`MT:`), Z-Wave SmartStart (`90…`) or Insteon code, Pairing Vault fills in the type and the Matter pairing code, DSK or Insteon ID, and shows what else the code contains, such as the vendor and product IDs. You can also paste or type the code's text into the **QR code payload** box and the same happens when you leave the box.
 
 On an iPhone, photos picked with **Scan a photo** are handed over as JPEG automatically. A HEIC file copied to a computer may not open in Chrome or Firefox; export it as JPEG first.
 
 ## Showing a code for re-setup
 
-**Show QR** on a device in the list (or **Show** next to the payload in the form) displays its QR code full screen, black on white, with the manual pairing code or DSK underneath. Point the Home Assistant app, or your Matter or Z-Wave controller app, at the screen to set the device up again. For Z-Wave the first five digits of the DSK, which controllers ask for as the PIN, are in bold. Tap anywhere to close it.
+**Show QR** on a device in the list (or **Show** next to the payload in the form) displays its QR code full screen, black on white, with the Matter pairing code, DSK or Insteon ID underneath. Point the Home Assistant app, or your Matter or Z-Wave controller app, at the screen to set the device up again. For Z-Wave the first five digits of the DSK, which controllers ask for as the PIN, are in bold. Tap anywhere to close it.
 
 ## Backups
 
