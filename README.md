@@ -1,12 +1,14 @@
-# Pairing Vault add-on repository
+# Pairing Vault App Repository
 
-A Home Assistant add-on that stores Matter, Z-Wave and Insteon setup QR codes, pairing codes and serial numbers, so you can re-setup a device after its label is out of reach.
+A Home Assistant app (add-on) that stores Matter, Z-Wave and Insteon setup QR codes, pairing codes and serial numbers, so you can re-setup a device without having physical access to the device.
+
+I got tired of my drawer full of paper copies of the codes included with many smart devices so had Claude build this for me.
 
 ## Install
 
 1. In Home Assistant, go to **Settings → Add-ons → Add-on Store**, open the ⋮ menu and choose **Repositories**.
 2. Add `https://github.com/Rgjones320/ha-pairing-vault`.
-3. Install **Pairing Vault**, start it, and enable **Show in sidebar**.
+3. Install **Pairing Vault** and start it. Optionally, enable **Show in sidebar**.
 
 ## Development
 
