@@ -83,7 +83,13 @@ function renderItem(d) {
     el("div", { className: "top" },
       el("span", { className: "name" }, d.name),
       el("span", { className: `badge ${d.protocol}` }, TYPE_LABEL[d.protocol] || d.protocol),
-      !d.qr_payload ? el("span", { className: "badge other", title: "No QR payload stored" }, "No QR") : null,
+      d.qr_payload
+        ? el("button", {
+            type: "button", className: "show-qr", textContent: "Show QR",
+            onclick: (e) => { e.stopPropagation(); showQr(d); },
+            onkeydown: (e) => e.stopPropagation(),
+          })
+        : el("span", { className: "badge other", title: "No QR payload stored" }, "No QR"),
     ),
     meta.length ? el("div", { className: "meta" }, ...meta) : null,
   );
@@ -118,14 +124,23 @@ function openForm(device = null) {
     form.elements.protocol.value = device.protocol;
   }
   applyProtocol();
+  resetQrFeedback();
+  if (device?.qr_payload) interpret(device.qr_payload, { fill: false });
   dialog.showModal();
   form.elements.name.focus();
 }
 
-form.addEventListener("input", () => { $("#form-error").hidden = true; });
+form.addEventListener("input", (e) => {
+  $("#form-error").hidden = true;
+  if (e.target.name === "qr_payload") $("#show-qr").hidden = !e.target.value.trim();
+});
 
 form.addEventListener("change", (e) => {
   if (e.target.name === "protocol") applyProtocol();
+  if (e.target.name === "qr_payload") {
+    resetQrFeedback();
+    if (e.target.value.trim()) interpret(e.target.value, { fill: true });
+  }
 });
 
 form.addEventListener("submit", async (e) => {
@@ -161,8 +176,259 @@ $("#delete").addEventListener("click", async () => {
 });
 
 $("#cancel").addEventListener("click", () => dialog.close());
+dialog.addEventListener("close", stopCamera);
 $("#add").addEventListener("click", () => openForm());
 $("#search").addEventListener("input", render);
 $("#filter").addEventListener("change", render);
+
+// --- QR codes ---------------------------------------------------------------
+// Decoding happens in the browser, so the photo never leaves the device. The
+// payload text is then sent to the add-on to work out the pairing codes.
+
+const qrStatus = $("#qr-status");
+const qrDetails = $("#qr-details");
+const cameraDialog = $("#camera");
+const video = $("#camera-video");
+let cameraStream = null;
+let interpretSeq = 0;
+
+// Live video needs a secure context (https or localhost). Photo upload doesn't.
+const cameraAvailable = window.isSecureContext && !!navigator.mediaDevices?.getUserMedia;
+$("#qr-camera").hidden = !cameraAvailable;
+$("#camera-note").hidden = window.isSecureContext;
+
+function setQrStatus(text, isError = false) {
+  qrStatus.textContent = text;
+  qrStatus.classList.toggle("error", isError);
+  qrStatus.hidden = !text;
+}
+
+function resetQrFeedback() {
+  interpretSeq++;
+  setQrStatus("");
+  qrDetails.hidden = true;
+  qrDetails.replaceChildren();
+  $("#show-qr").hidden = !form.elements.qr_payload.value.trim();
+}
+
+// Ask the add-on what the payload means. With fill, copy the pairing code
+// and type into the form, since the QR code is the source of truth for them.
+async function interpret(payload, { fill, scanned = false } = {}) {
+  const seq = ++interpretSeq;
+  let result;
+  try {
+    result = await request("api/decode", { method: "POST", body: JSON.stringify({ payload }) });
+  } catch (err) {
+    if (seq === interpretSeq) setQrStatus(err.message, true);
+    return;
+  }
+  if (seq !== interpretSeq) return;
+  const label = TYPE_LABEL[result.protocol];
+  if (result.protocol === "other") {
+    if (scanned) setQrStatus("QR code read. It isn't a Matter or Z-Wave setup code, so it's kept as text.");
+    return;
+  }
+  if (fill) {
+    form.elements.protocol.value = result.protocol;
+    applyProtocol();
+    for (const [key, value] of Object.entries(result.fields)) form.elements[key].value = value;
+    const filled = result.protocol === "matter" ? "manual pairing code" : "DSK";
+    setQrStatus(`${scanned ? "Read a" : "Recognised a"} ${label} code and filled in the ${filled}.`);
+  }
+  qrDetails.replaceChildren(...result.details.flatMap(([k, v]) => [el("dt", {}, k), el("dd", {}, v)]));
+  qrDetails.hidden = !result.details.length;
+}
+
+function useScanned(text) {
+  form.elements.qr_payload.value = text.trim();
+  resetQrFeedback();
+  interpret(text, { fill: true, scanned: true });
+}
+
+let detector;
+function barcodeDetector() {
+  // Native decoder where the browser has one (Chrome on Android, macOS).
+  if (detector === undefined) {
+    try {
+      detector = "BarcodeDetector" in window ? new BarcodeDetector({ formats: ["qr_code"] }) : null;
+    } catch {
+      detector = null;
+    }
+  }
+  return detector;
+}
+
+async function detectNative(source) {
+  const d = barcodeDetector();
+  if (!d) return null;
+  try {
+    const found = await d.detect(source);
+    return found[0]?.rawValue || null;
+  } catch {
+    return null;
+  }
+}
+
+const scratch = document.createElement("canvas");
+function detectJs(source, width, height, maxSide, inversionAttempts) {
+  const scale = Math.min(1, maxSide / Math.max(width, height));
+  scratch.width = Math.round(width * scale);
+  scratch.height = Math.round(height * scale);
+  const ctx = scratch.getContext("2d", { willReadFrequently: true });
+  ctx.drawImage(source, 0, 0, scratch.width, scratch.height);
+  const img = ctx.getImageData(0, 0, scratch.width, scratch.height);
+  return jsQR(img.data, img.width, img.height, { inversionAttempts })?.data || null;
+}
+
+async function loadImage(file) {
+  if (window.createImageBitmap) {
+    try {
+      return await createImageBitmap(file);
+    } catch { /* fall back to <img>, which some browsers decode more formats with */ }
+  }
+  const url = URL.createObjectURL(file);
+  try {
+    const img = new Image();
+    img.src = url;
+    await img.decode();
+    return img;
+  } finally {
+    URL.revokeObjectURL(url);
+  }
+}
+
+async function decodeImageFile(file) {
+  let image;
+  try {
+    image = await loadImage(file);
+  } catch {
+    throw new Error("This browser couldn't open that image. If it's a HEIC photo, save it as JPEG or PNG and try again.");
+  }
+  const width = image.naturalWidth || image.width;
+  const height = image.naturalHeight || image.height;
+  const text = await detectNative(image);
+  if (text) return text;
+  // Big photos with a small code decode better at a few different sizes.
+  for (const size of [1600, 1000, 640, 2400]) {
+    const found = detectJs(image, width, height, size, "attemptBoth");
+    if (found) return found;
+    if (size >= Math.max(width, height)) break;
+  }
+  return null;
+}
+
+$("#qr-photo").addEventListener("click", () => $("#qr-file").click());
+
+$("#qr-file").addEventListener("change", async (e) => {
+  const file = e.target.files[0];
+  e.target.value = "";
+  if (!file) return;
+  resetQrFeedback();
+  setQrStatus("Reading the photo…");
+  try {
+    const text = await decodeImageFile(file);
+    if (text) useScanned(text);
+    else setQrStatus("No QR code found in that photo. Try a closer, sharper shot with the whole code in view.", true);
+  } catch (err) {
+    setQrStatus(err.message, true);
+  }
+});
+
+async function startCamera() {
+  resetQrFeedback();
+  try {
+    cameraStream = await navigator.mediaDevices.getUserMedia({
+      video: { facingMode: { ideal: "environment" }, width: { ideal: 1280 } },
+      audio: false,
+    });
+  } catch (err) {
+    const why = {
+      NotAllowedError: "Camera access was blocked. Allow it in the browser's site settings, or use Scan a photo.",
+      NotFoundError: "No camera was found. Use Scan a photo instead.",
+    }[err.name] || `Couldn't start the camera (${err.message}).`;
+    setQrStatus(why, true);
+    return;
+  }
+  video.srcObject = cameraStream;
+  $("#camera-status").textContent = "Point the camera at the QR code.";
+  cameraDialog.showModal();
+  try {
+    await video.play();
+  } catch { /* autoplay of a muted inline video is allowed; ignore odd failures */ }
+  scanFrame();
+}
+
+async function scanFrame() {
+  if (!cameraStream) return;
+  if (video.readyState >= video.HAVE_CURRENT_DATA) {
+    const text = (await detectNative(video))
+      || detectJs(video, video.videoWidth, video.videoHeight, 800, "dontInvert");
+    if (text && cameraStream) {
+      cameraDialog.close();
+      useScanned(text);
+      return;
+    }
+  }
+  setTimeout(() => requestAnimationFrame(scanFrame), 120);
+}
+
+function stopCamera() {
+  if (!cameraStream) return;
+  cameraStream.getTracks().forEach((t) => t.stop());
+  cameraStream = null;
+  video.srcObject = null;
+  if (cameraDialog.open) cameraDialog.close();
+}
+
+$("#qr-camera").addEventListener("click", startCamera);
+$("#camera-cancel").addEventListener("click", () => cameraDialog.close());
+cameraDialog.addEventListener("close", stopCamera);
+
+// Full-screen display, so a phone app can scan the stored code from this screen.
+const viewer = $("#viewer");
+let wakeLock = null;
+
+function qrSvg(text) {
+  const mode = /^[0-9]+$/.test(text) ? "Numeric"
+    : /^[0-9A-Z $%*+\-./:]+$/.test(text) ? "Alphanumeric" : "Byte";
+  const qr = qrcode(0, "M");
+  qr.addData(text, mode);
+  qr.make();
+  return qr.createSvgTag({ cellSize: 8, margin: 32, scalable: true }); // 4-module quiet zone
+}
+
+async function showQr(device) {
+  const payload = (device.qr_payload || "").trim();
+  if (!payload) return;
+  try {
+    $("#viewer-qr").innerHTML = qrSvg(payload);
+  } catch {
+    $("#viewer-qr").textContent = "This payload is too long to show as a QR code.";
+  }
+  $("#viewer-name").textContent = device.name || "";
+  const viewerCode = $("#viewer-code");
+  viewerCode.replaceChildren();
+  if (device.protocol === "zwave" && device.dsk) {
+    // The first five digits are the PIN Z-Wave controllers ask for.
+    const [pin, ...rest] = device.dsk.split("-");
+    viewerCode.append("DSK ", el("strong", {}, pin), rest.length ? "-" + rest.join("-") : "");
+  } else if (device.manual_code) {
+    viewerCode.append(device.manual_code);
+  }
+  viewer.showModal();
+  try { await viewer.requestFullscreen?.(); } catch { /* not allowed in this frame; the dialog still fills it */ }
+  try { wakeLock = await navigator.wakeLock?.request("screen"); } catch { /* optional */ }
+}
+
+viewer.addEventListener("close", () => {
+  if (document.fullscreenElement) document.exitFullscreen().catch(() => {});
+  wakeLock?.release().catch(() => {});
+  wakeLock = null;
+});
+viewer.addEventListener("click", () => viewer.close());
+$("#show-qr").addEventListener("click", () => {
+  const data = Object.fromEntries(new FormData(form));
+  showQr(data);
+});
 
 load();
