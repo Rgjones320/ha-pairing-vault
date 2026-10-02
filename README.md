@@ -1,6 +1,6 @@
 # Pairing Vault add-on repository
 
-A Home Assistant add-on that stores Matter and Z-Wave setup QR codes, pairing codes and serial numbers, so you can re-setup a device after its label is out of reach.
+A Home Assistant add-on that stores Matter, Z-Wave and Insteon setup QR codes, pairing codes and serial numbers, so you can re-setup a device after its label is out of reach.
 
 ## Install
 
@@ -17,5 +17,7 @@ pip install -r pairing_vault/requirements.txt pytest
 python -m pytest                       # API and storage tests
 cd pairing_vault && DATA_DIR=./data python -m app   # http://localhost:8099
 ```
+
+The add-on icon is the `qrcode` glyph from [Material Design Icons](https://pictogrammers.com/library/mdi/) (Apache-2.0).
 
 Schema changes go in `MIGRATIONS` in `pairing_vault/app/db.py` as a new entry; the database's `PRAGMA user_version` tracks which have run.

@@ -81,6 +81,27 @@ def test_ui_served(client):
         assert client.get(f"/static/vendor/{lib}").status_code == 200
 
 
+def test_insteon_id_normalised(client):
+    dev = client.post("/api/devices", json={"name": "Modem", "protocol": "insteon", "insteon_id": "3fd2be"}).get_json()
+    assert dev["protocol"] == "insteon" and dev["insteon_id"] == "3F.D2.BE"
+    assert [d["name"] for d in client.get("/api/devices?q=d2.be").get_json()] == ["Modem"]
+
+
+def test_migrates_v1_database(tmp_path):
+    # A database created by 0.1/0.2 (schema version 1) keeps its rows and gains Insteon.
+    conn = sqlite3.connect(tmp_path / "pairing_vault.db")
+    for sql in MIGRATIONS[0]:
+        conn.execute(sql)
+    conn.execute("PRAGMA user_version = 1")
+    conn.execute("INSERT INTO devices (uuid, name, protocol, created_at, updated_at) "
+                 "VALUES ('u1', 'Old', 'zwave', 't', 't')")
+    conn.commit()
+    conn.close()
+    client = create_app(str(tmp_path)).test_client()
+    assert [(d["name"], d["insteon_id"]) for d in client.get("/api/devices").get_json()] == [("Old", "")]
+    assert client.post("/api/devices", json={"name": "Hub", "protocol": "insteon"}).status_code == 201
+
+
 def test_ingress_only(tmp_path, monkeypatch):
     monkeypatch.setenv("ALLOWED_CLIENTS", "172.30.32.2")
     client = create_app(str(tmp_path)).test_client()
